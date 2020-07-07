@@ -1,0 +1,14 @@
+{
+  "name": "sqsqs",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "jest --verbose=false"
+  },
+  "devDependencies": {
+    "sinon": "^9.0.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.702.0",
+    "uuid": "^8.2.0"
+  }
+}
