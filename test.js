@@ -85,7 +85,12 @@ describe('receive', () => {
   let messages = [];
 
   beforeEach(() => {
-    sqs = { receiveMessage: () => {}, deleteMessageBatch: () => {} };
+    sqs = { 
+      receiveMessage: () => {}, 
+      deleteMessageBatch: () => {}, 
+      changeMessageVisibilityBatch: () => {}, 
+      getQueueAttributes: () => {},
+    };
     sinon.stub(sqs, "receiveMessage").returns({
       promise: () => (Promise.resolve({
         Messages: messages.splice(0, 10),
@@ -97,6 +102,19 @@ describe('receive', () => {
         Successful: [],
       }))
     });
+    sinon.stub(sqs, "changeMessageVisibilityBatch").returns({
+      promise: () => (Promise.resolve({
+        Failed: [],
+        Successful: [],
+      }))
+    });
+    sinon.stub(sqs, "getQueueAttributes").returns({
+      promise: () => (Promise.resolve({
+        Attributes: {
+          VisibilityTimeout: 600,
+        },
+      }))
+    });
     sinon.stub(aws, 'SQS').returns(sqs);
   });
 
@@ -104,6 +122,8 @@ describe('receive', () => {
     aws.SQS.restore();
     sqs.receiveMessage.restore();
     sqs.deleteMessageBatch.restore();
+    sqs.changeMessageVisibilityBatch.restore();
+    sqs.getQueueAttributes.restore();
     messages = [];
   });
 
@@ -213,5 +233,69 @@ describe('receive', () => {
     sinon.assert.calledWith(sqs.deleteMessageBatch.secondCall, expectedParams[1]);
     sinon.assert.calledWith(sqs.deleteMessageBatch.thirdCall, expectedParams[2]);
   });
+
+  it('extend message visibility timeout(heartbeat)', async () => {
+    let queue = new Queue({
+      QueueUrl,
+      region: "ap-northeast-2",
+      apiVersion: "apiversion",
+      VisibilityTimeout: 1000,
+    });
+    let messages = [...Array(27).keys()].map(i => (
+      {
+        MessageId: i,
+        ReceiptHandle: "r" + i,
+      }
+    ));
+    const expectedParams = chunk(messages, 10).map(messages => ({
+      Entries: messages.map(m => ({
+        Id: m.MessageId,
+        ReceiptHandle: m.ReceiptHandle,
+        VisibilityTimeout: 1000,
+      })),
+      QueueUrl,
+    }));
+    let res = await queue.heartbeat(messages);
+    sinon.assert.calledOnce(aws.SQS);
+    sinon.assert.calledWith(aws.SQS, {region: "ap-northeast-2", apiVersion: "apiversion"});
+    sinon.assert.callCount(sqs.changeMessageVisibilityBatch, 3);
+    sinon.assert.callCount(sqs.getQueueAttributes, 1);
+
+    sinon.assert.calledWith(sqs.getQueueAttributes.firstCall, { AttributeNames: ["VisibilityTimeout"], QueueUrl: "https://dummy-queue" });
+    sinon.assert.calledWith(sqs.changeMessageVisibilityBatch.firstCall, expectedParams[0]);
+    sinon.assert.calledWith(sqs.changeMessageVisibilityBatch.secondCall, expectedParams[1]);
+    sinon.assert.calledWith(sqs.changeMessageVisibilityBatch.thirdCall, expectedParams[2]);
+  });
+  it('extend default message visibility timeout(heartbeat)', async () => {
+    let queue = new Queue({
+      QueueUrl,
+      region: "ap-northeast-2",
+      apiVersion: "apiversion",
+    });
+    let messages = [...Array(27).keys()].map(i => (
+      {
+        MessageId: i,
+        ReceiptHandle: "r" + i,
+      }
+    ));
+    const expectedParams = chunk(messages, 10).map(messages => ({
+      Entries: messages.map(m => ({
+        Id: m.MessageId,
+        ReceiptHandle: m.ReceiptHandle,
+        VisibilityTimeout: 600,
+      })),
+      QueueUrl,
+    }));
+    let res = await queue.heartbeat(messages);
+    sinon.assert.calledOnce(aws.SQS);
+    sinon.assert.calledWith(aws.SQS, {region: "ap-northeast-2", apiVersion: "apiversion"});
+    sinon.assert.callCount(sqs.changeMessageVisibilityBatch, 3);
+    sinon.assert.callCount(sqs.getQueueAttributes, 1);
+
+    sinon.assert.calledWith(sqs.getQueueAttributes.firstCall, { AttributeNames: ["VisibilityTimeout"], QueueUrl: "https://dummy-queue" });
+    sinon.assert.calledWith(sqs.changeMessageVisibilityBatch.firstCall, expectedParams[0]);
+    sinon.assert.calledWith(sqs.changeMessageVisibilityBatch.secondCall, expectedParams[1]);
+    sinon.assert.calledWith(sqs.changeMessageVisibilityBatch.thirdCall, expectedParams[2]);
+  })
 
 });

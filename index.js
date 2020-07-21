@@ -68,6 +68,23 @@ class Queue {
       }).promise()));
     return res;
   }
+  async heartbeat(messages) {
+    if(this.queueVisibilityTimeout == null)
+      this.queueVisibilityTimeout = (await this.sqs.getQueueAttributes({
+        QueueUrl: this.queueOption.QueueUrl,
+        AttributeNames: ['VisibilityTimeout'],
+      }).promise()).Attributes.VisibilityTimeout;
+    let res = await Promise.all(chunk(messages, 10).map(messagesChunk =>
+      this.sqs.changeMessageVisibilityBatch({
+        QueueUrl: this.queueOption.QueueUrl,
+        Entries: messagesChunk.map(m => ({
+          Id: m.MessageId,
+          ReceiptHandle: m.ReceiptHandle,
+          VisibilityTimeout: this.queueOption.VisibilityTimeout || this.queueVisibilityTimeout,
+        })),
+      }).promise()));
+    return res;
+  }
 }
 
 module.exports = Queue;
