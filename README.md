@@ -39,6 +39,12 @@ received = [{
 }]
 *** */
 
+/* parallel receive */
+/* the final message count could exceed the queueSize */
+let concurrency = 10
+let received = await queue.receive(queueSize, concurrency)
+
+
 /* Delete Messages */
 await queue.delete(received);
 

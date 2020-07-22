@@ -57,22 +57,34 @@ export default class Queue {
       }).promise()))
     return res;
   }
-  async receive(queueSize=10): Promise<SQS.MessageList> {
+  async receive(queueSize=10, concurrency=1): Promise<SQS.MessageList> {
     let messages: SQS.MessageList = [];
-    while(true) {
-      let res = await this.sqs.receiveMessage({
+    let res = await this.sqs.receiveMessage({
+      QueueUrl: this.messageOption.QueueUrl,
+      MaxNumberOfMessages: Math.min(this.messageOption.MaxNumberOfMessages, queueSize - messages.length),
+      VisibilityTimeout: this.messageOption.VisibilityTimeout,
+      WaitTimeSeconds: Math.min(this.messageOption.WaitTimeSeconds),
+    }).promise();
+    if(!res.Messages || res.Messages.length == 0)
+      return messages;
+    for(let msg of res.Messages){
+      messages.push(msg);
+    }
+    let shouldBreak = false
+    while(!shouldBreak) {
+      let reses = await Promise.all([...Array(concurrency).keys()].map(_ => this.sqs.receiveMessage({
         QueueUrl: this.messageOption.QueueUrl,
         MaxNumberOfMessages: Math.min(this.messageOption.MaxNumberOfMessages, queueSize - messages.length),
         VisibilityTimeout: this.messageOption.VisibilityTimeout,
         WaitTimeSeconds: Math.min(this.messageOption.WaitTimeSeconds),
-      }).promise();
-      if(!res.Messages || res.Messages.length == 0)
-        break;
-      for(let msg of res.Messages){
-        try{
-          messages.push(msg);
-        } catch(e) {
-          console.log(`Fail to decode message '${msg.Body}', just skip it`);
+      }).promise()));
+      for(let res of reses){
+        if(!res.Messages || res.Messages.length == 0){
+          shouldBreak = true;
+        } else {
+          for(let msg of res.Messages){ 
+            messages.push(msg);
+          }
         }
       }
       if(messages.length >= queueSize)

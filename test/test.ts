@@ -206,6 +206,32 @@ describe('receive', () => {
     expect(res).toMatchObject(expectedOutput);
   });
 
+  it('receive messages length larger than queueSize parralel', async () => {
+    let queue = new Queue({
+      QueueUrl,
+      region: "ap-northeast-2",
+      apiVersion: "apiversion"
+    });
+    messages = [...Array(100).keys()].map(i => (
+      {Body: JSON.stringify({i: i})}
+    ));
+    const expectedOutput = messages.slice(0, 60).map(m => ({
+        Body: m.Body,
+    }));
+    const expectedParams = [{
+      QueueUrl,
+      MaxNumberOfMessages: 10,
+      VisibilityTimeout: undefined as number,
+      WaitTimeSeconds: 20
+    }];
+    let res = await queue.receive(50, 5);
+    expect(MockedSQS).toHaveBeenCalledTimes(1);
+    expect(MockedSQS).toHaveBeenCalledWith({region: "ap-northeast-2", apiVersion: "apiversion"});
+    expect(mockedReceiveMessage.mock.calls.length).toBe(6);
+    expect(mockedReceiveMessage.mock.calls[0]).toMatchObject(expectedParams);
+    expect(res).toMatchObject(expectedOutput);
+  });
+
   it('delete messages length larger than 10', async () => {
     let queue = new Queue({
       QueueUrl,
