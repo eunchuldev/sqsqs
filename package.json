@@ -3,8 +3,7 @@
   "version": "0.2.0",
   "scripts": {
     "test": "ts-jest",
-    "build": "tsc",
-    "prepublish": "tsc"
+    "build": "tsc"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
