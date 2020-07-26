@@ -1,6 +1,6 @@
 {
   "name": "sqsqs",
-  "version": "0.2.5",
+  "version": "0.2.8",
   "scripts": {
     "test": "ts-jest",
     "build": "tsc"

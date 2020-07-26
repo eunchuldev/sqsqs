@@ -20,7 +20,7 @@ export default class Queue {
   option: Option;
   sqs: SQS;
   queueVisibilityTimeout?: number | string;
-  constructor(option: Option, awsOption: SQS.Types.ClientConfiguration) {
+  constructor(option: Option, awsOption?: SQS.Types.ClientConfiguration) {
     this.option = {
       QueueUrl: option.QueueUrl,
       MaxNumberOfMessages: option.MaxNumberOfMessages || 10,
@@ -76,6 +76,8 @@ export default class Queue {
     for(let msg of res.Messages){
       messages.push(msg);
     }
+    if(messages.length >= queueSize)
+      return messages;
     let shouldBreak = false
     while(!shouldBreak) {
       let reses = await Promise.all([...Array(concurrency).keys()].map(_ => this.sqs.receiveMessage({
