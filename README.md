@@ -6,14 +6,11 @@ SQSQS(Simple Quick SQS wrapper)
 import Queue from 'sqsqs';
 // const Queue = require("sqsqs").default;
 
-const queue = new Queue({
-  QueueUrl: string,
-  MaxNumberOfMessages?: number,
-  VisibilityTimeout?: number,
-  WaitTimeSeconds?: number,
-  apiVersion?: string,
-  region?: string,
-});
+const awsConfig = {
+  apiVersion: '2012-01-01',
+  region: 'ap-northeast-2',
+};
+const queue = new Queue({ QueueUrl: string, }, awsConfig);
 
 const data1 = "data1"
 const data2 = "data2"

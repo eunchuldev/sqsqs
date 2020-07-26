@@ -68,6 +68,7 @@ describe('send', () => {
   it('sends messages length less than 10', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -91,6 +92,7 @@ describe('send', () => {
   it('sends messages length larger than 10', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -131,6 +133,7 @@ describe('receive', () => {
   it('receive messages length less than 10', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -157,6 +160,7 @@ describe('receive', () => {
   it('receive messages length larger than 10, but less than queueSize', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -183,6 +187,7 @@ describe('receive', () => {
   it('receive messages length larger than queueSize', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -209,6 +214,7 @@ describe('receive', () => {
   it('receive messages length larger than queueSize parralel', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -235,6 +241,7 @@ describe('receive', () => {
   it('delete messages length larger than 10', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
       apiVersion: "apiversion"
     });
@@ -262,9 +269,10 @@ describe('receive', () => {
   it('extend message visibility timeout(heartbeat)', async () => {
     let queue = new Queue({
       QueueUrl,
-      region: "ap-northeast-2",
-      apiVersion: "apiversion",
       VisibilityTimeout: 1000,
+    }, { 
+      region: "ap-northeast-2",
+      apiVersion: "apiversion"
     });
     let messages = [...Array(27).keys()].map(i => (
       {
@@ -293,8 +301,9 @@ describe('receive', () => {
   it('extend default message visibility timeout(heartbeat)', async () => {
     let queue = new Queue({
       QueueUrl,
+    }, { 
       region: "ap-northeast-2",
-      apiVersion: "apiversion",
+      apiVersion: "apiversion"
     });
     let messages = [...Array(27).keys()].map(i => (
       {
