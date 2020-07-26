@@ -29,6 +29,29 @@ export default class Queue {
     };
     this.sqs = new SQS(awsOption);
   }
+  static async createQueue(
+    name: string, 
+    awsOption: SQS.Types.ClientConfiguration | undefined = undefined,
+    attributes: { [key: string]: string } | undefined = undefined, 
+    tags: {[key: string]: string } | undefined = undefined, 
+    option: Omit<Option, 'QueueUrl'> = {},)
+  {
+    let sqs = new SQS(awsOption);
+    await sqs.createQueue({
+      QueueName: name,
+      Attributes: attributes,
+      tags
+    }).promise();
+    let url = (await sqs.getQueueUrl({
+      QueueName: name,
+    }).promise()).QueueUrl;
+    return new Queue(Object.assign({ QueueUrl: url }, option), awsOption);
+  }
+  async deleteQueue() {
+    await this.sqs.deleteQueue({
+      QueueUrl: this.option.QueueUrl
+    }).promise();
+  }
   async send(messages: string[]) {
     let res = await Promise.all(chunk(messages, 10).map((messagesChunk: string[]) => 
       this.sqs.sendMessageBatch({

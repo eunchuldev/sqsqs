@@ -41,6 +41,18 @@ const mockedChangeMessageVisibilityBatch = jest.fn(() => ({
     },
   }))
 }));
+const mockedCreateQueue = jest.fn(() => ({
+  promise: () => (Promise.resolve({
+    Attributes: {
+      VisibilityTimeout: 600,
+    },
+  }))
+}));
+const mockedGetQueueUrl = jest.fn(() => ({
+  promise: () => (Promise.resolve({
+    QueueUrl: 'test-url',
+  }))
+}));
 jest.mock('aws-sdk/clients/sqs', () => {
   return jest.fn().mockImplementation(() => ({
     sendMessageBatch: mockedSendMessageBatch,
@@ -48,6 +60,8 @@ jest.mock('aws-sdk/clients/sqs', () => {
     deleteMessageBatch: mockedDeleteMessageBatch,
     getQueueAttributes: mockedGetQueueAttributes,
     changeMessageVisibilityBatch: mockedChangeMessageVisibilityBatch,
+    createQueue: mockedCreateQueue,
+    getQueueUrl: mockedGetQueueUrl,
   }));
 });
 import Queue from '../src/index';
@@ -329,5 +343,16 @@ describe('receive', () => {
     expect(mockedGetQueueAttributes.mock.calls[0]).toMatchObject([{ AttributeNames: ["VisibilityTimeout"], QueueUrl: "https://dummy-queue" }]);
     expect(mockedChangeMessageVisibilityBatch.mock.calls).toMatchObject(expectedParams);
   })
+  it('create Queue', async () => {
+    let queue = await Queue.createQueue('test-queue', {region: "ap-northeast-2", apiVersion: "apiversion"});
+    expect(MockedSQS).toHaveBeenCalledTimes(2);
+    expect(MockedSQS).toHaveBeenCalledWith({region: "ap-northeast-2", apiVersion: "apiversion"});
 
+    expect(mockedCreateQueue.mock.calls.length).toBe(1);
+    expect(mockedCreateQueue.mock.calls[0]).toMatchObject([{ QueueName: 'test-queue' }]);
+    expect(mockedGetQueueUrl.mock.calls.length).toBe(1);
+    expect(mockedGetQueueUrl.mock.calls[0]).toMatchObject([{ QueueName: 'test-queue' }]);
+
+    expect(queue.option.QueueUrl).toBe('test-url');
+  });
 });
